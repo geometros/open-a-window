@@ -1,18 +1,22 @@
 import http.client
 import json
-from urllib.parse import urlparse
+from urllib.parse import urlparse, urlencode
 import os
+import base64
 
 url = os.environ.get("GOV_WEATHER_API")
 email = os.environ.get("EMAIL") #this is sent to the weather API call as well as used for the email call, see https://www.weather.gov/documentation/services-web-api
 userAgent = "window-weather"
 
-def get_weather_data(url):
-
-    parsed_url = urlparse(url)
+def extractData(data): 
+    dataList = data["properties"]["periods"]
+    return "the current temperature in your area is: " + str(dataList[0]["temperature"])
     
-    host = parsed_url.netloc
-    path = parsed_url.path
+def getWeatherData(url):
+
+    parsedUrl = urlparse(url)
+    host = parsedUrl.netloc
+    path = parsedUrl.path
 
     conn = http.client.HTTPSConnection(host)
 
@@ -26,12 +30,53 @@ def get_weather_data(url):
 
     if response.status == 200:
         data = json.loads(response.read().decode())
-        print("Request successful!")
-        print(json.dumps(data, indent=2))
+        #print("Request successful!")
+        conn.close()
+        return data
     else:
         print(f"Request failed with status code: {response.status}")
         print(response.read().decode())
+        conn.close()
+        return None
 
-    conn.close()
+def send_simple_message(api_key, domain, recipient, sender, subject, text):
+    host = f"api.mailgun.net"
+    path = f"/v3/{domain}/messages"
 
-get_weather_data(url)
+    auth = base64.b64encode(f"api:{api_key}".encode()).decode()
+
+    headers = {
+        "Authorization": f"Basic {auth}",
+        "Content-Type": "application/x-www-form-urlencoded"
+    }
+
+    body = urlencode({
+        "from": sender,
+        "to": recipient,
+        "subject": subject,
+        "text": text
+    })
+
+    conn = http.client.HTTPSConnection(host)
+
+    try:
+        conn.request("POST", path, body, headers)
+        response = conn.getresponse()
+        return response.status, response.reason, response.read().decode()
+    finally:
+        conn.close()
+
+weatherData = getWeatherData(url)
+temperatureString = extractData(weatherData)
+
+recipient = os.environ.get("EMAIL")
+APIKey = os.environ.get("MAILGUN_API_KEY")
+domain = "sandbox8f5ce56870e64d1c84c4c9a1b56db5c2.mailgun.org"
+sender = "<mailgun@sandbox8f5ce56870e64d1c84c4c9a1b56db5c2.mailgun.org>"
+subject = temperatureString
+text = "."
+
+status, reason, response = send_simple_message(APIKey, domain, recipient, sender, subject, text)
+print(f"Status: {status}")
+print(f"Reason: {reason}")
+print(f"Response: {response}")
