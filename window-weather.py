@@ -69,10 +69,10 @@ def send_simple_message(api_key, domain, recipient, sender, subject, text):
 weatherData = getWeatherData(url)
 temperatureString = extractData(weatherData)
 
-recipient = os.environ.get("EMAIL")
+recipient = os.environ.get("TARGET_EMAIL")
 APIKey = os.environ.get("MAILGUN_API_KEY")
-domain = "sandbox8f5ce56870e64d1c84c4c9a1b56db5c2.mailgun.org"
-sender = "<mailgun@sandbox8f5ce56870e64d1c84c4c9a1b56db5c2.mailgun.org>"
+domain = os.environ.get("MAILGUN_DOMAIN")
+sender =  os.environ.get("MAILGUN_SENDER")
 subject = temperatureString
 text = "."
 
