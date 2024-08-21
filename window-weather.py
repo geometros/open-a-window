@@ -4,15 +4,18 @@ from urllib.parse import urlparse, urlencode
 import os
 import base64
 
+LOWER_BOUND = 42
+UPPER_BOUND = 71
+
 url = os.environ.get("GOV_WEATHER_API")
-email = os.environ.get("EMAIL") #this is sent to the weather API call as well as used for the email call, see https://www.weather.gov/documentation/services-web-api
+email = os.environ.get("TARGET_EMAIL") #this is sent to the weather API call as well as used for the email call, see https://www.weather.gov/documentation/services-web-api
 userAgent = "window-weather"
 
 def extractData(data): 
     dataList = data["properties"]["periods"]
-    return "the current temperature in your area is: " + str(dataList[0]["temperature"])
+    return dataList[0]["temperature"]
     
-def getWeatherData(url):
+def getWeatherData(url,userAgent):
 
     parsedUrl = urlparse(url)
     host = parsedUrl.netloc
@@ -66,17 +69,17 @@ def send_simple_message(api_key, domain, recipient, sender, subject, text):
     finally:
         conn.close()
 
-weatherData = getWeatherData(url)
-temperatureString = extractData(weatherData)
+weatherData = getWeatherData(url,userAgent)
+currentTemp = extractData(weatherData)
 
-recipient = os.environ.get("TARGET_EMAIL")
 APIKey = os.environ.get("MAILGUN_API_KEY")
 domain = os.environ.get("MAILGUN_DOMAIN")
 sender =  os.environ.get("MAILGUN_SENDER")
-subject = temperatureString
+subject = "Temp in your area is ",currentTemp, " F, good time to open a window"
 text = "."
 
-status, reason, response = send_simple_message(APIKey, domain, recipient, sender, subject, text)
-print(f"Status: {status}")
-print(f"Reason: {reason}")
-print(f"Response: {response}")
+if LOWER_BOUND < currentTemp < UPPER_BOUND:
+    status, reason, response = send_simple_message(APIKey, domain, email, sender, subject, text)
+    print(status, reason, response)
+else:
+    print(currentTemp, "is out of bounds, notification not sent")
