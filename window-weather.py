@@ -75,7 +75,7 @@ currentTemp = extractData(weatherData)
 APIKey = os.environ.get("MAILGUN_API_KEY")
 domain = os.environ.get("MAILGUN_DOMAIN")
 sender =  os.environ.get("MAILGUN_SENDER")
-subject = "Temp in your area is ",currentTemp, " F, good time to open a window"
+subject = f"Temp in your area is {currentTemp} F, good time to open a window"
 text = "."
 
 if LOWER_BOUND < currentTemp < UPPER_BOUND:
