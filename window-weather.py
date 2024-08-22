@@ -3,6 +3,7 @@ import json
 from urllib.parse import urlparse, urlencode
 import os
 import base64
+from datetime import datetime
 
 LOWER_BOUND = 42
 UPPER_BOUND = 71
@@ -80,6 +81,6 @@ text = "."
 
 if LOWER_BOUND < currentTemp < UPPER_BOUND:
     status, reason, response = send_simple_message(APIKey, domain, email, sender, subject, text)
-    print(status, reason, response)
+    print(datetime.now()," : ",status, reason, response)
 else:
-    print(currentTemp, "is out of bounds, notification not sent")
+    print(datetime.now()," : ",currentTemp, "is out of bounds, notification not sent")
