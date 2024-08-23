@@ -3,7 +3,7 @@ import json
 from urllib.parse import urlparse, urlencode
 import os
 import base64
-from datetime import datetime
+from datetime import datetime, date
 
 LOWER_BOUND = 42
 UPPER_BOUND = 71
@@ -70,17 +70,36 @@ def send_simple_message(api_key, domain, recipient, sender, subject, text):
     finally:
         conn.close()
 
-weatherData = getWeatherData(url,userAgent)
-currentTemp = extractData(weatherData)
+FLAG_FILE = "/Users/paul/repos/open-a-window/window-weather-flag" #don't forget this path is wrong on the server lol
 
-APIKey = os.environ.get("MAILGUN_API_KEY")
-domain = os.environ.get("MAILGUN_DOMAIN")
-sender =  os.environ.get("MAILGUN_SENDER")
-subject = f"Temp in your area is {currentTemp} F, good time to open a window"
-text = "."
+def worker():
+    weatherData = getWeatherData(url,userAgent)
+    currentTemp = extractData(weatherData)
+    
+    APIKey = os.environ.get("MAILGUN_API_KEY")
+    domain = os.environ.get("MAILGUN_DOMAIN")
+    sender =  os.environ.get("MAILGUN_SENDER")
+    subject = f"Temp in your area is {currentTemp} F, good time to open a window"
+    text = "."
+    
+    if LOWER_BOUND < currentTemp < UPPER_BOUND:
+        status, reason, response = send_simple_message(APIKey, domain, email, sender, subject, text)
+        print(datetime.now()," : ",status, reason, response)
+    else:
+        print(datetime.now()," : ",currentTemp, "is out of bounds, notification not sent")
 
-if LOWER_BOUND < currentTemp < UPPER_BOUND:
-    status, reason, response = send_simple_message(APIKey, domain, email, sender, subject, text)
-    print(datetime.now()," : ",status, reason, response)
-else:
-    print(datetime.now()," : ",currentTemp, "is out of bounds, notification not sent")
+    with open(FLAG_FILE,'w') as f:
+        f.write(str(date.today()))
+    
+def should_run():
+    if not os.path.exists(FLAG_FILE):
+        return True
+    with open(FLAG_FILE, "r") as f:
+        return str(date.today()) != f.read().strip()
+
+if should_run(): 
+    print("Script has not ran today, running worker")
+    worker()
+else: 
+    print("Script already ran today, exiting")
+
