@@ -89,13 +89,20 @@ def worker():
         print(datetime.now()," : ",currentTemp, "is out of bounds, notification not sent")
 
     with open(FLAG_FILE,'w') as f:
-        f.write(str(date.today()))
+        f.write(datetime.now().strftime('%d %H'))
     
 def should_run():
     if not os.path.exists(FLAG_FILE):
         return True
     with open(FLAG_FILE, "r") as f:
-        return str(date.today()) != f.read().strip()
+        hourDayNow = datetime.now().strftime('%H')
+        lastRun = f.read().strip()
+        hourDayLastRun = lastRun.split(' ')
+        if hourDayNow[0] == hourDayLastRun[0] and int(hourDayLastRun[1]) < 12 and int(hourDayNow[1]) > 12:
+            return True
+        if hourDayNow[0] != hourDayLastRun[0]:
+            return True
+        return False
 
 if should_run(): 
     print("Script has not ran today, running worker")
