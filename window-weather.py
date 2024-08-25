@@ -70,7 +70,7 @@ def send_simple_message(api_key, domain, recipient, sender, subject, text):
     finally:
         conn.close()
 
-FLAG_FILE = "/Users/paul/repos/open-a-window/window-weather-flag" #don't forget this path is wrong on the server lol
+FLAG_FILE = os.environ.get("WINDOW_WEATHER_FLAG")
 
 def worker():
     weatherData = getWeatherData(url,userAgent)
@@ -85,17 +85,17 @@ def worker():
     if LOWER_BOUND < currentTemp < UPPER_BOUND:
         status, reason, response = send_simple_message(APIKey, domain, email, sender, subject, text)
         print(datetime.now()," : ",status, reason, response)
+        with open(FLAG_FILE,'w') as f:
+            f.write(datetime.now().strftime('%d %H'))
     else:
         print(datetime.now()," : ",currentTemp, "is out of bounds, notification not sent")
 
-    with open(FLAG_FILE,'w') as f:
-        f.write(datetime.now().strftime('%d %H'))
-    
 def should_run():
     if not os.path.exists(FLAG_FILE):
         return True
     with open(FLAG_FILE, "r") as f:
-        hourDayNow = datetime.now().strftime('%H')
+        hourDayNow = datetime.now().strftime('%d %H')
+        hourDayNow = hourDayNow.split(' ')
         lastRun = f.read().strip()
         hourDayLastRun = lastRun.split(' ')
         if hourDayNow[0] == hourDayLastRun[0] and int(hourDayLastRun[1]) < 12 and int(hourDayNow[1]) > 12:
@@ -105,8 +105,8 @@ def should_run():
         return False
 
 if should_run(): 
-    print("Script has not ran today, running worker")
+    print("Running worker")
     worker()
 else: 
-    print("Script already ran today, exiting")
+    print("Script already ran too recently, exiting")
 
