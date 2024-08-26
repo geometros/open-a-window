@@ -84,11 +84,11 @@ def worker():
     
     if LOWER_BOUND < currentTemp < UPPER_BOUND:
         status, reason, response = send_simple_message(APIKey, domain, email, sender, subject, text)
-        print(datetime.now()," : ",status, reason, response)
+        print(status, reason, response)
         with open(FLAG_FILE,'w') as f:
             f.write(datetime.now().strftime('%d %H'))
     else:
-        print(datetime.now()," : ",currentTemp, "is out of bounds, notification not sent")
+        print(currentTemp, "is out of bounds, notification not sent")
 
 def should_run():
     if not os.path.exists(FLAG_FILE):
@@ -105,8 +105,8 @@ def should_run():
         return False
 
 if should_run(): 
-    print("Running worker")
+    print(datetime.now(),"Running worker")
     worker()
 else: 
-    print("Script already ran too recently, exiting")
+    print(datetime.now(),"Script already ran too recently, exiting")
 
